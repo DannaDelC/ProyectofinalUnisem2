@@ -1,0 +1,226 @@
+import numpy as np
+import tkinter as tk
+from tkinter import messagebox
+from fractions import Fraction
+
+# Funciones matemáticas
+def inversa_matriz(matriz):
+    try:
+        inversa = np.linalg.inv(matriz)
+        inversa_frac = np.vectorize(lambda x: Fraction(x).limit_denominator())(inversa)
+        messagebox.showinfo("Resultado", f"Matriz original:\n{mostrar_matriz(matriz)}\n\nMatriz inversa:\n{mostrar_matriz(inversa_frac)}")
+        return inversa_frac
+    except np.linalg.LinAlgError:
+        return None
+
+def multiplicar_matrices(matriz1, matriz2):
+    pasos = f"Matriz A:\n{mostrar_matriz(matriz1)}\n\nMatriz B:\n{mostrar_matriz(matriz2)}\n\n"
+    resultado = np.dot(matriz1, matriz2)
+    resultado_frac = np.vectorize(lambda x: Fraction(x).limit_denominator())(resultado)
+    pasos += f"Resultado de A x B:\n{mostrar_matriz(resultado_frac)}"
+    messagebox.showinfo("Resultado de Multiplicación", pasos)
+    return resultado_frac
+
+def resolver_ecuaciones(matriz_a, matriz_b, metodo='gauss'):
+    if metodo == 'gauss':
+        return gauss_jordan(matriz_a, matriz_b)
+    elif metodo == 'cramer':
+        return regla_de_cramer(matriz_a, matriz_b)
+    else:
+        raise ValueError("Método no reconocido. Usa 'gauss' o 'cramer'.")
+
+def gauss_jordan(matriz_a, matriz_b):
+    augmented = np.hstack((matriz_a, matriz_b))
+    filas, columnas = augmented.shape
+    pasos = f"Matriz aumentada:\n{mostrar_matriz(augmented)}\n\n"
+
+    for i in range(filas):
+        pivot = augmented[i, i]
+        if pivot == 0:
+            # Permutar filas si el pivote es cero
+            for k in range(i + 1, filas):
+                if augmented[k, i] != 0:
+                    augmented[[i, k]] = augmented[[k, i]]
+                    pasos += f"Permutación de filas {i+1} y {k+1}:\n{mostrar_matriz(augmented)}\n"
+                    pivot = augmented[i, i]
+                    break
+            else:
+                messagebox.showerror("Error", "La matriz no tiene solución única.")
+                return
+
+        augmented[i] = augmented[i] / pivot  # Dividir toda la fila por el pivote
+        pasos += f"Dividir fila {i+1} entre {pivot}:\n{mostrar_matriz(augmented)}\n"
+
+        for j in range(filas):
+            if j != i:
+                factor = augmented[j, i]
+                augmented[j] -= factor * augmented[i]  # Restar filas
+                pasos += f"Restar fila {i+1} multiplicada por {factor} de la fila {j+1}:\n{mostrar_matriz(augmented)}\n"
+
+    soluciones = augmented[:, -1]
+
+    pasos += f"Solución:\n{mostrar_matriz(soluciones)}"
+    messagebox.showinfo("Pasos de Gauss-Jordan", pasos)
+    return "Solución única", soluciones
+
+def regla_de_cramer(matriz_a, matriz_b):
+    det_a = np.linalg.det(matriz_a)
+    det_a_frac = Fraction(det_a).limit_denominator()
+    pasos = f"Determinante de la matriz A: {det_a_frac}\n\n"
+    
+    if det_a == 0:
+        messagebox.showerror("Error", "El determinante de la matriz A es cero, por lo tanto no tiene solución única.")
+        return "Sin solución o soluciones infinitas"
+    
+    n = matriz_a.shape[0]
+    soluciones = []
+    
+    for i in range(n):
+        matriz_temp = matriz_a.copy()
+        matriz_temp[:, i] = matriz_b.flatten()
+        det_temp = np.linalg.det(matriz_temp)
+        det_temp_frac = Fraction(det_temp).limit_denominator()
+        pasos += f"Matriz modificada para X{i+1}:\n{mostrar_matriz(matriz_temp)}\n"
+        pasos += f"Determinante de la matriz modificada para X{i+1}: {det_temp_frac}\n"
+        soluciones.append(det_temp_frac / det_a_frac)
+    
+    soluciones_frac = [Fraction(sol).limit_denominator() for sol in soluciones]
+    pasos += f"Solución: {soluciones_frac}"
+    messagebox.showinfo("Pasos de Cramer", pasos)
+    
+    return "Solución única", soluciones_frac
+
+# Función para mostrar matrices de manera formateada
+def mostrar_matriz(matriz):
+    if matriz.ndim == 1:  # Si es un vector (1D)
+        return "  ".join([str(Fraction(val).limit_denominator()) for val in matriz])
+    filas = []
+    for fila in matriz:
+        filas.append("  ".join([str(Fraction(val).limit_denominator()) for val in fila]))
+    return "\n".join(filas)
+
+
+# Funciones de interfaz gráfica
+def ingresar_matriz():
+    n = int(entry_n.get())
+    matriz_window = tk.Toplevel(root)
+    matriz_window.title(f"Ingresar matriz {n}x{n}")
+
+    global entries_matriz1, entries_matriz2, entries_resultados
+    entries_matriz1 = []
+    entries_matriz2 = []
+    entries_resultados = []
+
+    # Crear marcos para organizar los elementos visualmente
+    frame_matriz_a = tk.Frame(matriz_window, padx=10, pady=10)
+    frame_matriz_b = tk.Frame(matriz_window, padx=10, pady=10)
+    frame_resultados = tk.Frame(matriz_window, padx=10, pady=10)
+    frame_botones = tk.Frame(matriz_window, padx=10, pady=10)
+
+    frame_matriz_a.grid(row=0, column=0, padx=10, pady=10)
+    frame_matriz_b.grid(row=0, column=1, padx=10, pady=10)
+    frame_resultados.grid(row=0, column=2, padx=10, pady=10)
+    frame_botones.grid(row=1, column=0, columnspan=3, pady=20)
+
+    # Crear campos para la primera matriz
+    tk.Label(frame_matriz_a, text="Matriz A").grid(row=0, column=0, columnspan=n)
+    for i in range(n):
+        fila_entries = []
+        for j in range(n):
+            entry = tk.Entry(frame_matriz_a, width=5)
+            entry.grid(row=i+1, column=j)
+            fila_entries.append(entry)
+        entries_matriz1.append(fila_entries)
+
+    # Crear campos para la segunda matriz para la multiplicación
+    tk.Label(frame_matriz_b, text="Matriz B (para multiplicación)").grid(row=0, column=0, columnspan=n)
+    for i in range(n):
+        fila_entries = []
+        for j in range(n):
+            entry = tk.Entry(frame_matriz_b, width=5)
+            entry.grid(row=i+1, column=j)
+            fila_entries.append(entry)
+        entries_matriz2.append(fila_entries)
+
+    # Crear campos para los resultados (vector independiente en ecuaciones)
+    tk.Label(frame_resultados, text="Resultados B (para Gauss/Cramer)").grid(row=0, column=0, columnspan=n)
+    for i in range(n):
+        entry = tk.Entry(frame_resultados, width=5)
+        entry.grid(row=i+1, column=0)
+        entries_resultados.append(entry)
+
+    # Menú de opciones
+    tk.Button(frame_botones, text="Inversa de la matriz A", command=lambda: calcular_inversa(n)).grid(row=0, column=0, padx=5, pady=5)
+    tk.Button(frame_botones, text="Multiplicar A x B", command=lambda: calcular_multiplicacion(n)).grid(row=0, column=1, padx=5, pady=5)
+    tk.Button(frame_botones, text="Resolver por Gauss", command=lambda: resolver_sistema(n, 'gauss')).grid(row=0, column=2, padx=5, pady=5)
+    tk.Button(frame_botones, text="Resolver por Cramer", command=lambda: resolver_sistema(n, 'cramer')).grid(row=0, column=3, padx=5, pady=5)
+
+# Funciones para realizar cálculos
+def calcular_inversa(n):
+    matriz = []
+    for i in range(n):
+        fila = [float(entry.get()) for entry in entries_matriz1[i] if entry.get().strip()]
+        if len(fila) != n:
+            messagebox.showerror("Error", "Por favor, llena todos los campos de la matriz A.")
+            return
+        matriz.append(fila)
+    matriz = np.array(matriz)
+    
+    inversa = inversa_matriz(matriz)
+    if inversa is None:
+        messagebox.showerror("Error", "La matriz no tiene inversa.")
+
+def calcular_multiplicacion(n):
+    matriz1 = []
+    matriz2 = []
+    
+    for i in range(n):
+        fila1 = [float(entry.get()) for entry in entries_matriz1[i] if entry.get().strip()]
+        fila2 = [float(entry.get()) for entry in entries_matriz2[i] if entry.get().strip()]
+        if len(fila1) != n or len(fila2) != n:
+            messagebox.showerror("Error", "Por favor, llena todos los campos de ambas matrices.")
+            return
+        matriz1.append(fila1)
+        matriz2.append(fila2)
+
+    matriz1 = np.array(matriz1)
+    matriz2 = np.array(matriz2)
+    
+    multiplicar_matrices(matriz1, matriz2)
+
+def resolver_sistema(n, metodo):
+    matriz_a = []
+    matriz_b = []
+
+    for i in range(n):
+        fila = [float(entry.get()) for entry in entries_matriz1[i] if entry.get().strip()]
+        matriz_a.append(fila)
+        if len(fila) != n:
+            messagebox.showerror("Error", "Por favor, llena todos los campos de la matriz A.")
+            return
+    matriz_a = np.array(matriz_a)
+
+    for i in range(n):
+        resultado = entries_resultados[i].get().strip()
+        if resultado == "":
+            messagebox.showerror("Error", "Por favor, llena todos los campos del vector B.")
+            return
+        matriz_b.append([float(resultado)])
+    matriz_b = np.array(matriz_b)
+
+    resultado = resolver_ecuaciones(matriz_a, matriz_b, metodo)
+    messagebox.showinfo("Resultado", f"{resultado}")
+
+# Crear la ventana principal
+root = tk.Tk()
+root.title("Operaciones con Matrices")
+
+# Solicitar tamaño de la matriz
+tk.Label(root, text="Ingrese el tamaño de la matriz (n x n):").pack(pady=10)
+entry_n = tk.Entry(root, width=5)
+entry_n.pack(pady=5)
+
+tk.Button(root, text="Ingresar Matrices", command=ingresar_matriz).pack(pady=10)
+
+# Iniciar la aplicación
+root.mainloop()
