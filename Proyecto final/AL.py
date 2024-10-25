@@ -113,29 +113,34 @@ def graficar_ecuaciones(matriz_a, matriz_b):
     plt.grid()
     plt.show()
 
+def solicitar_grafica(matriz_a, matriz_b):
+    respuesta = messagebox.askyesno("Mostrar Gráfica", "¿Desea ver la gráfica de las ecuaciones?")
+    if respuesta:
+        graficar_ecuaciones(matriz_a, matriz_b)
+
 # Interfaz gráfica
-def ingresar_matriz():
+def ingresar_matriz(opcion):
     n = int(entry_n.get())
     matriz_window = tk.Toplevel(root)
     matriz_window.title(f"Ingresar matriz {n}x{n}")
-    matriz_window.configure(bg="#F0FFFF")  # Fondo pastel suave
+    matriz_window.configure(bg="#F3EAF4")  
 
     global entries_matriz1, entries_matriz2, entries_resultados
     entries_matriz1 = []
     entries_matriz2 = []
     entries_resultados = []
 
-    frame_matriz_a = tk.Frame(matriz_window, bg="#E6E6FA", padx=10, pady=10)  # Fondo pastel
-    frame_matriz_b = tk.Frame(matriz_window, bg="#E6E6FA", padx=10, pady=10)  # Fondo pastel
-    frame_resultados = tk.Frame(matriz_window, bg="#E6E6FA", padx=10, pady=10)  # Fondo pastel
-    frame_botones = tk.Frame(matriz_window, bg="#E6E6FA", padx=10, pady=10)  # Fondo pastel
+    frame_matriz_a = tk.Frame(matriz_window, bg="#EADDE1", padx=10, pady=10)  
+    frame_matriz_b = tk.Frame(matriz_window, bg="#EADDE1", padx=10, pady=10)  
+    frame_resultados = tk.Frame(matriz_window, bg="#EADDE1", padx=10, pady=10)  
+    frame_botones = tk.Frame(matriz_window, bg="#EADDE1", padx=10, pady=10)  
 
     frame_matriz_a.grid(row=0, column=0, padx=10, pady=10)
     frame_matriz_b.grid(row=0, column=1, padx=10, pady=10)
     frame_resultados.grid(row=0, column=2, padx=10, pady=10)
     frame_botones.grid(row=1, column=0, columnspan=3, pady=20)
 
-    tk.Label(frame_matriz_a, text="Matriz A", bg="#E6E6FA", font=("Arial", 10, "bold")).grid(row=0, column=0, columnspan=n)
+    tk.Label(frame_matriz_a, text="Matriz A", bg="#EADDE1", font=("Arial", 10, "bold")).grid(row=0, column=0, columnspan=n)
     for i in range(n):
         fila_entries = []
         for j in range(n):
@@ -144,67 +149,78 @@ def ingresar_matriz():
             fila_entries.append(entry)
         entries_matriz1.append(fila_entries)
 
-    tk.Label(frame_matriz_b, text="Matriz B (para multiplicación)", bg="#E6E6FA", font=("Arial", 10, "bold")).grid(row=0, column=0, columnspan=n)
-    for i in range(n):
-        fila_entries = []
-        for j in range(n):
-            entry = tk.Entry(frame_matriz_b, width=5)
-            entry.grid(row=i+1, column=j)
-            fila_entries.append(entry)
-        entries_matriz2.append(fila_entries)
+    if opcion in ['gauss', 'cramer']:
+        tk.Label(frame_resultados, text="Resultados B (para Gauss/Cramer)", bg="#EADDE1", font=("Arial", 10, "bold")).grid(row=0, column=0, columnspan=n)
+        for i in range(n):
+            entry = tk.Entry(frame_resultados, width=5)
+            entry.grid(row=i+1, column=0)
+            entries_resultados.append(entry)
 
-    tk.Label(frame_resultados, text="Resultados B (para Gauss/Cramer)", bg="#E6E6FA", font=("Arial", 10, "bold")).grid(row=0, column=0, columnspan=n)
-    for i in range(n):
-        entry = tk.Entry(frame_resultados, width=5)
-        entry.grid(row=i+1, column=0)
-        entries_resultados.append(entry)
+    if opcion == 'multiplicar':
+        tk.Label(frame_matriz_b, text="Matriz B", bg="#EADDE1", font=("Arial", 10, "bold")).grid(row=0, column=0, columnspan=n)
+        for i in range(n):
+            fila_entries = []
+            for j in range(n):
+                entry = tk.Entry(frame_matriz_b, width=5)
+                entry.grid(row=i+1, column=j)
+                fila_entries.append(entry)
+            entries_matriz2.append(fila_entries)
 
-    # Colores vibrantes para los botones
-    boton_color_accion = "#FF7F50"
+    
+    boton_color_accion = "#BCA3AC"
     boton_color_regresar = "#F08080"
     texto_boton = "#FFFFFF"
 
-    tk.Button(frame_botones, text="Inversa de la matriz A", bg=boton_color_accion, fg=texto_boton, command=lambda: calcular_inversa(n)).grid(row=0, column=0, padx=5, pady=5)
-    tk.Button(frame_botones, text="Multiplicar matrices", bg=boton_color_accion, fg=texto_boton, command=lambda: calcular_multiplicacion(n)).grid(row=0, column=1, padx=5, pady=5)
-    tk.Button(frame_botones, text="Resolver ecuaciones (Gauss)", bg=boton_color_accion, fg=texto_boton, command=lambda: calcular_ecuaciones(n, metodo='gauss')).grid(row=0, column=2, padx=5, pady=5)
-    tk.Button(frame_botones, text="Resolver ecuaciones (Cramer)", bg=boton_color_accion, fg=texto_boton, command=lambda: calcular_ecuaciones(n, metodo='cramer')).grid(row=1, column=0, columnspan=3, pady=5)
+    if opcion == 'invertir':
+        tk.Button(frame_botones, text="Inversa de la matriz A", bg=boton_color_accion, fg=texto_boton, command=lambda: calcular_inversa(n)).grid(row=0, column=0, padx=5, pady=5)
+    elif opcion == 'multiplicar':
+        tk.Button(frame_botones, text="Multiplicar matrices", bg=boton_color_accion, fg=texto_boton, command=lambda: calcular_multiplicacion(n)).grid(row=0, column=0, padx=5, pady=5)
+    elif opcion in ['gauss', 'cramer']:
+        tk.Button(frame_botones, text="Resolver ecuaciones", bg=boton_color_accion, fg=texto_boton, command=lambda: calcular_ecuaciones(n, opcion)).grid(row=0, column=0, padx=5, pady=5)
 
-    # Botón para regresar a la ventana principal
-    tk.Button(frame_botones, text="Regresar", bg=boton_color_regresar, fg=texto_boton, command=matriz_window.destroy).grid(row=2, column=0, columnspan=3, pady=10)
+    tk.Button(frame_botones, text="Regresar", bg=boton_color_regresar, fg=texto_boton, command=matriz_window.destroy).grid(row=0, column=1, padx=5, pady=5)
 
 def calcular_inversa(n):
     matriz_a = np.array([[float(entries_matriz1[i][j].get()) for j in range(n)] for i in range(n)])
     inversa = inversa_matriz(matriz_a)
-    if inversa is None:
-        messagebox.showerror("Error", "La matriz no es invertible.")
+
+    if inversa is not None:
+        inversa_str = mostrar_matriz(inversa)
+        messagebox.showinfo("Inversa de la Matriz A", f"La inversa de la matriz A es:\n{inversa_str}")
     else:
-        messagebox.showinfo("Inversa de la Matriz", f"Inversa:\n{mostrar_matriz(inversa)}")
+        messagebox.showerror("Error", "La matriz A no es invertible.")
 
 def calcular_multiplicacion(n):
     matriz_a = np.array([[float(entries_matriz1[i][j].get()) for j in range(n)] for i in range(n)])
     matriz_b = np.array([[float(entries_matriz2[i][j].get()) for j in range(n)] for i in range(n)])
     resultado = multiplicar_matrices(matriz_a, matriz_b)
-    messagebox.showinfo("Resultado de la Multiplicación", f"Matriz resultante:\n{mostrar_matriz(resultado)}")
 
-def calcular_ecuaciones(n, metodo='gauss'):
+    resultado_str = mostrar_matriz(resultado)
+    messagebox.showinfo("Resultado de la multiplicación", f"El resultado de la multiplicación es:\n{resultado_str}")
+
+def calcular_ecuaciones(n, metodo):
     matriz_a = np.array([[float(entries_matriz1[i][j].get()) for j in range(n)] for i in range(n)])
     matriz_b = np.array([[float(entries_resultados[i].get())] for i in range(n)])
-    pasos, soluciones = resolver_ecuaciones(matriz_a, matriz_b, metodo)
-    
-    messagebox.showinfo("Resultado de la Resolución", f"Pasos:\n{pasos}")
-    
-    respuesta = messagebox.askyesno("Mostrar Gráfica", "¿Desea ver la gráfica de las ecuaciones?")
-    if respuesta:
-        graficar_ecuaciones(matriz_a, matriz_b)
 
+    pasos, soluciones = resolver_ecuaciones(matriz_a, matriz_b, metodo)
+    messagebox.showinfo("Resultados", pasos)
+    solicitar_grafica(matriz_a, matriz_b)
+
+# Ventana principal
 root = tk.Tk()
 root.title("Calculadora de Matrices")
-root.geometry("600x400")
-root.configure(bg="#F0FFFF")  # Fondo pastel suave
+root.geometry("400x300")
+root.configure(bg="#F3EAF4")  
 
-tk.Label(root, text="Tamaño de la matriz (n):", bg="#F0FFFF", fg="#333333", font=("Arial", 12, "bold")).pack(pady=10)
+
+tk.Label(root, text="Tamaño de la matriz (n * n):", bg="#F3EAF4", font=("Arial", 12)).pack(pady=10)
 entry_n = tk.Entry(root)
 entry_n.pack(pady=5)
-tk.Button(root, text="Ingresar Matrices", bg="#FF7F50", fg="#FFFFFF", command=ingresar_matriz).pack(pady=20)  # Botón vibrante
+
+
+tk.Button(root, text="Invertir Matriz", command=lambda: ingresar_matriz('invertir'), bg="#BCA3AC", fg="#FFFFFF").pack(pady=5)
+tk.Button(root, text="Multiplicar Matrices", command=lambda: ingresar_matriz('multiplicar'), bg="#BCA3AC", fg="#FFFFFF").pack(pady=5)
+tk.Button(root, text="Resolver Ecuaciones por Gauss", command=lambda: ingresar_matriz('gauss'), bg="#BCA3AC", fg="#FFFFFF").pack(pady=5)
+tk.Button(root, text="Resolver Ecuaciones por Cramer", command=lambda: ingresar_matriz('cramer'), bg="#BCA3AC", fg="#FFFFFF").pack(pady=5)
 
 root.mainloop()
